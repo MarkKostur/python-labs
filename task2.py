@@ -1,0 +1,6 @@
+num1 = int(input("Введіть перше число "))
+num2 = int(input("Введіть друге число "))
+print ("Множення: ", num1 * num2)
+print ("Ділення: ", num1 / num2)
+print ("Додавання: ", num1 + num2)
+print ("Віднімання: ", num1 - num2)

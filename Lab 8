@@ -1,0 +1,173 @@
+import random
+import threading
+import time
+
+
+class Position:
+    def __init__(self, name):
+        self.name = name
+
+
+class IPolling:
+    def polling(self):
+        pass
+
+    def runPolling(self, timeout):
+        def infinitePolling():
+            while True:
+                self.polling()
+                time.sleep(timeout)
+
+        pollingThread = threading.Thread(target=infinitePolling)
+        pollingThread.start()
+        return pollingThread
+
+
+class Customer:
+    def __init__(self, group_size, patience):
+        self.group_size = group_size
+        self.patience = patience  # Time they are willing to wait for a table
+
+
+class Table(Position):
+    def __init__(self, name):
+        super().__init__(name)
+        self.customer = None
+        self.is_busy = False
+
+    def seat_customer(self, customer):
+        self.customer = customer
+        self.is_busy = True
+
+    def clear_table(self):
+        self.customer = None
+        self.is_busy = False
+
+
+class Waiter(IPolling):
+    def __init__(self, cafe, positions):
+        self.cafe = cafe
+        self.positions = positions
+        self.current_position = None
+        self.dir = 1
+        self.is_busy = False
+
+    def move(self):
+        while True:
+            if not self.is_busy:
+                self.find_and_serve_customer()
+            time.sleep(1)
+
+    def polling(self):
+        if self.current_position is None:
+            self.current_position = self.positions[0]
+
+        # Check for customers at tables and serve them
+        for position in self.positions:
+            if isinstance(position, Table) and position.is_busy:
+                self.serve_customer(position)
+                break
+        self.move()
+
+    def serve_customer(self, table):
+        if table.customer and table.customer.patience > 0:
+            # Simulate serving
+            time.sleep(3)  # Serving time
+            self.cafe.profit += 10 * table.customer.group_size
+            table.clear_table()
+
+
+class Kitchen(Position, IPolling):
+    def __init__(self, name):
+        Position.__init__(self, name)
+        self.pending = []
+        self.ready = []
+
+    def add_pending(self, order):
+        self.pending.append(order)
+
+    def pick_ready(self):
+        if self.ready:
+            return self.ready.pop(0)
+        return None
+
+    def polling(self):
+        if self.pending:
+            # Simulate cooking time and transfer to ready orders
+            order = self.pending.pop(0)
+            time.sleep(order.cooking_time)
+            self.ready.append(order)
+
+
+class Cafe:
+    def __init__(self, num_tables, num_waitstaff):
+        self.tables = [Table(f"Table{i}") for i in range(num_tables)]
+        self.waitstaff = [Waiter(self, self.tables) for _ in range(num_waitstaff)]
+        self.kitchen = Kitchen("Kitchen")
+        self.profit = 0
+        self.lost_customers = 0
+        self.waiting_customers = []
+
+        self.kitchen = Kitchen("Kitchen")
+
+    def open_cafe(self):
+        for waiter in self.waitstaff:
+            waiter.runPolling(1)  # Poll every 1 second
+        self.kitchen.runPolling(1)
+
+    def simulate_hour(self, hour):
+        customer_arrival_rate = 5 if 12 <= hour <= 14 else 2
+        for _ in range(customer_arrival_rate):
+            group_size = random.randint(1, 4)
+            patience = random.randint(5, 15)
+            customer = Customer(group_size, patience)
+            seated = self.seat_customer_if_possible(customer)
+            if not seated:
+                self.waiting_customers.append(customer)
+
+        for customer in list(self.waiting_customers):
+            customer.patience -= 1
+            if customer.patience <= 0:
+                self.waiting_customers.remove(customer)
+                self.lost_customers += 1
+
+    def seat_customer_if_possible(self, customer):
+        for table in self.tables:
+            if not table.is_busy:
+                table.seat_customer(customer)
+                return True
+        return False
+
+    def simulate_day(self):
+        self.open_cafe()
+        for hour in range(10, 22):
+            self.simulate_hour(hour)
+            time.
+
+sleep(1)  # Each hour is simulated as 1 second
+        for waiter in self.waitstaff:
+            waiter.join()
+
+    def report(self):
+        return f"Profit: ${self.profit}, Lost Customers: {self.lost_customers}"
+
+
+    while True:
+        print("\nCafe Simulator")
+        print("1. Simulate a day")
+        print("2. Simulate a day with table reservations (Not implemented yet)")
+        print("3. Exit")
+        choice = input("Choose an option: ")
+
+        if choice == "1":
+            cafe.simulate_day()
+            print(cafe.report())
+        elif choice == "2":
+            print("Feature not implemented yet.")
+        elif choice == "3":
+            print("Exiting the simulator.")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+
